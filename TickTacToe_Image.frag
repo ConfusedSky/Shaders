@@ -48,33 +48,8 @@ vec2 rotateSpace(in vec2 st, in float angle) {
     return st;
 }
 
-void grid(inout vec2 st, in vec2 gridSize, out vec2 tp){
-    st *= gridSize;
-    tp = floor(st);
-    st = fract(st);
-}
-
 float getPiece(in vec2 tp) {
-    if(tp.x == 0.0 && tp.y == 0.0) {
-        return 1.0;
-    } else if(tp.x == 1.0 && tp.y == 0.0) {
-        return -1.0;
-    } else if(tp.x == 2.0 && tp.y == 0.0) {
-        return -1.0;
-    } else if(tp.x == 0.0 && tp.y == 1.0) {
-        return -1.0;
-    } else if(tp.x == 1.0 && tp.y == 1.0) {
-        return -1.0;
-    } else if(tp.x == 2.0 && tp.y == 1.0) {
-        return .0;
-    } else if(tp.x == 0.0 && tp.y == 2.0) {
-        return -1.0;
-    } else if(tp.x == 1.0 && tp.y == 2.0) {
-        return .0;
-    } else if(tp.x == 2.0 && tp.y == 2.0) {
-        return -1.0;
-    }
-    return 0.0;
+    return texture(iChannel0, (.5 + tp) / 4.).x;
 }
 
 float checkWin(in float player) {
@@ -119,6 +94,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec2 st = fragCoord.xy/iResolution.xy;
     st.x -= .22;
     st.x *= iResolution.x/iResolution.y;
+    
     vec3 color = vec3(0.0);
 
     vec2 tp;
@@ -163,5 +139,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     c *= odd;
     
     color -= c;
+
+    
     fragColor = vec4(color,1.0);
+    //fragColor = texture(iChannel0, st);
+    //fragColor.x += 1.;
+    //fragColor.x /= 2.;
 }
