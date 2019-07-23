@@ -57,6 +57,15 @@ vec3 cast_ray(in vec3 orig, in vec3 dir, in Sphere[SPHERE_COUNT] spheres, in Lig
     float diffuse_light_intensity = 0., specular_light_intensity = 0.;
     for (int i=0; i<LIGHT_COUNT; i++) {
         vec3 light_dir = normalize(lights[i].position - point);
+        
+        float light_distance = length(lights[i].position - point);
+
+        vec3 shadow_orig = dot(light_dir, N) < 0. ? point - N*1e-3 : point + N*1e-3; // checking if the point lies in the shadow of the lights[i]
+        vec3 shadow_pt, shadow_N;
+        Material tmpmaterial;
+        if (scene_intersect(shadow_orig, light_dir, spheres, shadow_pt, shadow_N, tmpmaterial) && length(shadow_pt-shadow_orig) < light_distance)
+            continue;
+        
         diffuse_light_intensity  += lights[i].intensity * max(0.f, dot(light_dir, N));
         specular_light_intensity += pow(max(0.f, dot(-reflect(-light_dir, N), dir)),
                                          material.specular_exponent)*lights[i].intensity;
