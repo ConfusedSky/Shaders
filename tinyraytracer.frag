@@ -8,7 +8,7 @@ struct Light {
 };
 
 struct Material {
-    vec2 albedo;
+    vec3 albedo;
     vec3 diffuse_color;
     float specular_exponent;
 };
@@ -84,13 +84,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     uv *= tan(fov / 2.);
     uv.x *= iResolution.x/iResolution.y;
     
-    Material ivory = Material(vec2(0.6,  0.3), vec3(0.4, 0.4, 0.3), 50.);
-    Material red_rubber = Material(vec2(0.9,  0.1), vec3(0.3, 0.1, 0.1), 10.);
+    Material ivory = Material(vec3(0.6,  0.3, 0.1), vec3(0.4, 0.4, 0.3), 50.);
+    Material red_rubber = Material(vec3(0.9,  0.1, 0.0), vec3(0.3, 0.1, 0.1), 10.);
+    Material mirror = Material(vec3(0.1, 10.0, 0.8), vec3(0.0, 1.0, 1.0), 1425.);
   
     Sphere s1 = Sphere(vec3(-3., 0., -16.), 2., ivory);
-    Sphere s2 = Sphere(vec3(-1.0, -1.5, -12.), 2., red_rubber);
+    Sphere s2 = Sphere(vec3(-1.0, -1.5, -12.), 2., mirror);
     Sphere s3 = Sphere(vec3(1.5, -0.5, -18.), 3., red_rubber);
-    Sphere s4 = Sphere(vec3(7., 5., -18.), 4., ivory);
+    Sphere s4 = Sphere(vec3(7., 5., -18.), 4., mirror);
     Sphere[SPHERE_COUNT] s = Sphere[SPHERE_COUNT](s1, s2, s3, s4);
     
     Light l1 = Light(vec3(-20., 20.,  20.), 1.5);
