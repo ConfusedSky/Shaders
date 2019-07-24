@@ -46,11 +46,11 @@ bool scene_intersect(in vec3 orig, in vec3 dir, in Sphere[SPHERE_COUNT] spheres,
     return spheres_dist<1000.;
 }
 
-vec3 cast_ray(in vec3 orig, in vec3 dir, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT] lights) {
+vec3 cast_ray(in vec3 orig, in vec3 dir, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT] lights, in int depth) {
 	vec3 point, N;
     Material material;
     
-    if (!scene_intersect(orig, dir, spheres, point, N, material)) {
+    if (depth > 4 || !scene_intersect(orig, dir, spheres, point, N, material)) {
         return vec3(0.2, 0.7, 0.8); // background color
     }
     
@@ -70,8 +70,14 @@ vec3 cast_ray(in vec3 orig, in vec3 dir, in Sphere[SPHERE_COUNT] spheres, in Lig
         specular_light_intensity += pow(max(0.f, dot(-reflect(-light_dir, N), dir)),
                                          material.specular_exponent)*lights[i].intensity;
     }
+    
+    vec3 reflect_dir = normalize(reflect(dir, N));
+    vec3 reflect_orig = dot(reflect_dir, N) < 0. ? point - N*1e-3 : point + N*1e-3;
+    vec3 reflect_color = cast_ray(reflect_orig, reflect_dir, spheres, lights, depth + 1);
+    
     return material.diffuse_color * diffuse_light_intensity * material.albedo[0] +
-        vec3(1., 1., 1.) * specular_light_intensity * material.albedo[1];
+        vec3(1., 1., 1.) * specular_light_intensity * material.albedo[1] +
+        reflect_color * material.albedo[2];
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -101,7 +107,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     vec3 orig = vec3(0);
     vec3 dir = normalize(vec3(uv, -1));
-    vec3 col = cast_ray(vec3(0), dir, s, l);
+    vec3 col = cast_ray(vec3(0), dir, s, l, 0);
     float m = max(col.x, max(col.y, col.z));
     if(m>1.) col = col / m;
     col = vec3(.5);
