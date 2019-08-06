@@ -29,6 +29,11 @@ struct Ray {
 	vec3 orig;
     vec3 dir;
 };
+    
+struct Scene {
+	Light lights[LIGHT_COUNT];
+    Sphere spheres[SPHERE_COUNT];
+};
 
 bool ray_intersect(in Sphere s, in Ray ray, out float t0) {
         vec3 L = s.center - ray.orig;
@@ -54,7 +59,23 @@ bool scene_intersect(in Ray ray, in Sphere[SPHERE_COUNT] spheres, out CastHit hi
             hit.material = spheres[i].material;
         }
     }
-    return spheres_dist<1000.;
+    //return spheres_dist<1000.;
+	
+    float checkerboard_dist = 1001.;
+    if (abs(ray.dir.y) > 1e-3) {
+   		float d = -(ray.orig.y+4.)/ray.dir.y;
+        vec3 pt = ray.orig + ray.dir*d;
+        if (d>0. && abs(pt.x) < 10. && pt.z < -10. && pt.z > -30. && d < spheres_dist) {
+        	checkerboard_dist = d;
+            hit.point = pt;
+            hit.N = vec3(0, 1, 0);
+            hit.material.diffuse_color = mod(floor(.5 * hit.point.x + 1000.) + floor(.5 * hit.point.z), 2.) == 0. ? vec3(1) : vec3(.3, .2, .1);
+            hit.material.specular_exponent = 1.;
+            hit.material.albedo = vec3(1., 0., 0.);
+        }
+    }
+    
+    return min(spheres_dist, checkerboard_dist) < 1000.;
 }
 
 vec3 process_material(in Material material, in float diffuse_intensity, in float specular_intensity, in vec3 reflect_color) {
@@ -106,8 +127,8 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
         	if (scene_intersect(Ray(shadow_orig, light_dir), spheres, shadowHit) && length(shadowHit.point-shadow_orig) < light_distance)
             	continue;
         
-        	diffuse_light_intensity  += lights[i].intensity * max(0.f, dot(light_dir, hit.N));
-        	specular_light_intensity += pow(max(0.f, dot(-reflect(-light_dir, hit.N), ray.dir)),
+        	diffuse_light_intensity  += lights[i].intensity * max(0., dot(light_dir, hit.N));
+        	specular_light_intensity += pow(max(0., dot(-reflect(-light_dir, hit.N), ray.dir)),
                                          hit.material.specular_exponent)*lights[i].intensity;
     	}
     
@@ -116,6 +137,16 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
 
     
     return reflection_color;
+}
+
+vec3 rotateCamera(in vec3 orig, in vec3 dir, in vec3 target) {
+    vec3 zAxis = normalize(orig - target);
+    vec3 xAxis = normalize(cross(vec3(0., 1., 0.), zAxis));
+	vec3 yAxis = normalize(cross(zAxis, xAxis));
+                           
+   	mat4 transform = mat4(vec4(xAxis, 0.), vec4(yAxis, 0.), vec4(zAxis, 0.), vec4(orig, 1.));
+    
+    return (transform * vec4(dir, 0.)).xyz;
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -128,28 +159,32 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     uv *= tan(fov / 2.);
     uv.x *= iResolution.x/iResolution.y;
     
+    Scene scene;
+    
     Material ivory = Material(vec3(0.6,  0.3, 0.1), vec3(0.4, 0.4, 0.3), 50.);
     Material red_rubber = Material(vec3(0.9,  0.1, 0.0), vec3(0.3, 0.1, 0.1), 10.);
-    Material mirror = Material(vec3(0.0, 10.0, 0.8), vec3(1.0, 1.0, 1.0), 1425.);
+    Material mirror = Material(vec3(0.1, 10.0, 0.8), vec3(1.0, 1.0, 1.0), 1425.);
   
     Sphere s1 = Sphere(vec3(-3., 0., -16.), 2., ivory);
-    Sphere s2 = Sphere(vec3(-1.0, -1.5, -12.), 2., mirror);
+    Sphere s2 = Sphere(vec3(-1.0 + 4. * sin(iTime), -1.5, -12.), 2., mirror);
     Sphere s3 = Sphere(vec3(1.5, -0.5, -18.), 3., red_rubber);
     Sphere s4 = Sphere(vec3(7., 5., -18.), 4., mirror);
-    Sphere[SPHERE_COUNT] s = Sphere[SPHERE_COUNT](s1, s2, s3, s4);
+    scene.spheres = Sphere[SPHERE_COUNT](s1, s2, s3, s4);
     
     Light l1 = Light(vec3(-20., 20.,  20.), 1.5);
     Light l2 = Light(vec3( 30., 50., -25.), 1.8);
     Light l3 = Light(vec3( 30., 20.,  30.), 1.7);
-    Light[LIGHT_COUNT] l = Light[LIGHT_COUNT](l1, l2, l3);
+    scene.lights = Light[LIGHT_COUNT](l1, l2, l3);
 
     vec3 orig = vec3(0);
+    orig = vec3(sin(iTime / 4.) * 15., 0., cos(iTime / 4.) * 15. - 15.);
+    vec3 center = vec3(1.125, .75, -16);
     vec3 dir = normalize(vec3(uv, -1));
+    dir = rotateCamera(orig, dir, center);
     Ray ray = Ray(orig, dir);
-    vec3 col = cast_ray(ray, s, l);
+    vec3 col = cast_ray(ray, scene.spheres, scene.lights);
     float m = max(col.x, max(col.y, col.z));
     if(m>1.) col = col / m;
-    //col = vec3(.5);
     
     // Output to screen
     fragColor = vec4(col,1.0);
