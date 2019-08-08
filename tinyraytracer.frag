@@ -101,8 +101,9 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     // Populate the hits
     for (; depth < 5; depth++) {
     	if (depth > 4 || !scene_intersect(rays[depth], spheres, hit)) {
-        	reflection_color = vec3(0.2, 0.7, 0.8); // background color
-    		break;
+        	//reflection_color = vec3(0.2, 0.7, 0.8); // background color
+    		reflection_color = texture(iChannel0, rays[depth].dir).xyz;
+            break;
     	} else {
     		hits[depth] = hit;
             vec3 reflect_dir = normalize(reflect(rays[depth].dir, hit.N));
