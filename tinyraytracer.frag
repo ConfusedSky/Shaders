@@ -93,13 +93,15 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     CastHit hits[4];
     vec3 reflection_color = vec3(0.);
     
-    int depth = 0;
+    // int depth = 0;
+    int p_depth = 0;
     rays[0] = ray;
     
     CastHit hit;
     
     // Populate the hits
-    for (; depth < 5; depth++) {
+    for (int depth = 0; depth < 5; depth++) {
+        p_depth = depth;
     	if (depth > 4 || !scene_intersect(rays[depth], spheres, hit)) {
         	//reflection_color = vec3(0.2, 0.7, 0.8); // background color
     		reflection_color = texture(iChannel0, rays[depth].dir).xyz;
@@ -114,7 +116,8 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     	}
     }
     
-    for (; depth > 0; depth--) {
+    for (int depth = 5; depth > 0; depth--) {
+        if (depth > p_depth) continue;
         hit = hits[depth - 1];
         ray = rays[depth - 1];
     	float diffuse_light_intensity = 0., specular_light_intensity = 0.;
@@ -164,18 +167,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     Material ivory = Material(vec3(0.6,  0.3, 0.1), vec3(0.4, 0.4, 0.3), 50.);
     Material red_rubber = Material(vec3(0.9,  0.1, 0.0), vec3(0.3, 0.1, 0.1), 10.);
-    Material mirror = Material(vec3(0.1, 10.0, 0.8), vec3(1.0, 1.0, 1.0), 1425.);
+    Material mirror = Material(vec3(0.05, 10.0, 0.8), vec3(1.0, 1.0, 1.0), 1425.);
   
-    Sphere s1 = Sphere(vec3(-3., 0., -16.), 2., ivory);
-    Sphere s2 = Sphere(vec3(-1.0 + 4. * sin(iTime), -1.5, -12.), 2., mirror);
-    Sphere s3 = Sphere(vec3(1.5, -0.5, -18.), 3., red_rubber);
-    Sphere s4 = Sphere(vec3(7., 5., -18.), 4., mirror);
-    scene.spheres = Sphere[SPHERE_COUNT](s1, s2, s3, s4);
+    scene.spheres[0] = Sphere(vec3(-3., 0., -16.), 2., ivory);
+    scene.spheres[1] = Sphere(vec3(-1.0 + 4. * sin(iTime), -1.5, -12.), 2., mirror);
+    scene.spheres[2] = Sphere(vec3(1.5, -0.5, -18.), 3., red_rubber);
+    scene.spheres[3] = Sphere(vec3(7., 5., -18.), 4., mirror);
     
-    Light l1 = Light(vec3(-20., 20.,  20.), 1.5);
-    Light l2 = Light(vec3( 30., 50., -25.), 1.8);
-    Light l3 = Light(vec3( 30., 20.,  30.), 1.7);
-    scene.lights = Light[LIGHT_COUNT](l1, l2, l3);
+    scene.lights[0] = Light(vec3(-20., 20.,  20.), 1.5);
+    scene.lights[1] = Light(vec3( 30., 50., -25.), 1.8);
+    scene.lights[2] = Light(vec3( 30., 20.,  30.), 1.7);
 
     vec3 orig = vec3(0);
     orig = vec3(sin(iTime / 4.) * 15., 0., cos(iTime / 4.) * 15. - 15.);
