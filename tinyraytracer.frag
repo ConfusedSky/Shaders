@@ -70,8 +70,8 @@ bool scene_intersect(in Ray ray, in Sphere[SPHERE_COUNT] spheres, out CastHit hi
             hit.point = pt;
             hit.N = vec3(0, 1, 0);
             hit.material.diffuse_color = mod(floor(.5 * hit.point.x + 1000.) + floor(.5 * hit.point.z), 2.) == 0. ? vec3(1) : vec3(.3, .2, .1);
-            hit.material.specular_exponent = 1.;
-            hit.material.albedo = vec3(1., 0., 0.);
+            hit.material.specular_exponent = 100.;
+            hit.material.albedo = vec3(.6,  0.3, 0.3);
         }
     }
     
@@ -89,8 +89,8 @@ vec3 shiftOrig(vec3 source, CastHit hit) {
 }
 
 vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT] lights) {
-	Ray rays[5];
-    CastHit hits[4];
+	Ray rays[6];
+    CastHit hits[5];
     vec3 reflection_color = vec3(0.);
     
     // int depth = 0;
@@ -101,7 +101,7 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     
     // Populate the hits
     for (int depth = 0; depth < 5; depth++) {
-        p_depth = depth;
+        p_depth = depth; // iphone compat
     	if (depth > 4 || !scene_intersect(rays[depth], spheres, hit)) {
         	//reflection_color = vec3(0.2, 0.7, 0.8); // background color
     		reflection_color = texture(iChannel0, rays[depth].dir).xyz;
@@ -116,8 +116,8 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     	}
     }
     
-    for (int depth = 5; depth > 0; depth--) {
-        if (depth > p_depth) continue;
+    for (int depth = 4; depth > 0; depth--) {
+        if (depth > p_depth) continue; // iPhone compat
         hit = hits[depth - 1];
         ray = rays[depth - 1];
     	float diffuse_light_intensity = 0., specular_light_intensity = 0.;
@@ -135,8 +135,9 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
         	specular_light_intensity += pow(max(0., dot(-reflect(-light_dir, hit.N), ray.dir)),
                                          hit.material.specular_exponent)*lights[i].intensity;
     	}
-    
+        
     	reflection_color = process_material(hit.material, diffuse_light_intensity, specular_light_intensity, reflection_color);
+    	//reflection_color = vec3(diffuse_light_intensity / 6.);
     }
 
     
@@ -185,8 +186,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     dir = rotateCamera(orig, dir, center);
     Ray ray = Ray(orig, dir);
     vec3 col = cast_ray(ray, scene.spheres, scene.lights);
-    float m = max(col.x, max(col.y, col.z));
-    if(m>1.) col = col / m;
+    //float m = max(col.x, max(col.y, col.z));
+    //if(m>1.) col = col / m;
     
     // Output to screen
     fragColor = vec4(col,1.0);
