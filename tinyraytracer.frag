@@ -186,8 +186,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     dir = rotateCamera(orig, dir, center);
     Ray ray = Ray(orig, dir);
     vec3 col = cast_ray(ray, scene.spheres, scene.lights);
-    //float m = max(col.x, max(col.y, col.z));
-    //if(m>1.) col = col / m;
+    float m = max(col.x, max(col.y, col.z));
+    if(m>1.) col = col / m;
     
     // Output to screen
     fragColor = vec4(col,1.0);
