@@ -1,6 +1,7 @@
 #define PI 3.14159265
 #define SPHERE_COUNT 4
 #define LIGHT_COUNT 3
+#define REFLECTIONS 3
 
 struct Light {
     vec3 position;
@@ -89,8 +90,8 @@ vec3 shiftOrig(vec3 source, CastHit hit) {
 }
 
 vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT] lights) {
-	Ray rays[6];
-    CastHit hits[5];
+	Ray rays[REFLECTIONS + 2];
+    CastHit hits[REFLECTIONS + 1];
     vec3 reflection_color = vec3(0.);
     
     // int depth = 0;
@@ -100,9 +101,9 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     CastHit hit;
     
     // Populate the hits
-    for (int depth = 0; depth < 5; depth++) {
+    for (int depth = 0; depth < REFLECTIONS + 1; depth++) {
         p_depth = depth; // iphone compat
-    	if (depth > 4 || !scene_intersect(rays[depth], spheres, hit)) {
+    	if (depth > REFLECTIONS || !scene_intersect(rays[depth], spheres, hit)) {
         	//reflection_color = vec3(0.2, 0.7, 0.8); // background color
     		reflection_color = texture(iChannel0, rays[depth].dir).xyz;
             break;
@@ -116,7 +117,7 @@ vec3 cast_ray(in Ray ray, in Sphere[SPHERE_COUNT] spheres, in Light[LIGHT_COUNT]
     	}
     }
     
-    for (int depth = 4; depth > 0; depth--) {
+    for (int depth = REFLECTIONS; depth > 0; depth--) {
         if (depth > p_depth) continue; // iPhone compat
         hit = hits[depth - 1];
         ray = rays[depth - 1];
